@@ -11,7 +11,7 @@ var S3 = require('s3asy');
 var s3 = new S3({
   key: '<api-key-here>',
   secret: '<secret-here>',
-  bucket: 'learnboost',
+  bucket: 'bucket-name',
   cache: true
 });
 

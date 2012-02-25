@@ -1,6 +1,6 @@
 # Introduction
 
-s3asy ('S-Three-Zee') is a simple library for issuing GET, PUT, and DELETE requests against Amazon S3. It allows caching of files  in a local redis instance using the ```If-Modified-Since``` and ```Last-Modified``` headers as cache-control.
+s3asy ('S-Three-Zee') is a simple library for issuing GET, PUT, and DELETE requests against Amazon S3. It allows caching of files  in a local redis instance using the ```If-Modified-Since``` and ```Date```` headers as cache-control.
 
 It achieves this simplicity by utilizing [knox](https://github.com/LearnBoost/knox) and [cacheit](https://github.com/andrewjstone/cacheit) under the hood.
 

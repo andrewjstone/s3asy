@@ -6,9 +6,13 @@ var S3 = module.exports = function(config) {
   if (config.cache) {
     var Cache = require('cacheit');
     this.cache = new Cache();
-    delete config.cache;
   };
-  this.client = knox.createClient(config);
+  var knox_conf = {
+    key: config.key,
+    secret: config.secret,
+    bucket: config.bucket
+  };
+  this.client = knox.createClient(knox_conf);
 };
 
 S3.prototype.get = function(path, headers, callback) {
@@ -39,7 +43,7 @@ S3.prototype.get = function(path, headers, callback) {
         if (complete) return; // an error has occurred
         async.series([
           function(cb) {
-            if (cache) return cache.set(path+'-date', res.headers['last-modified'], cb);
+            if (cache) return cache.set(path+'-date', res.headers['date'], cb);
             cb();
           },
           function(cb) {
@@ -57,9 +61,9 @@ S3.prototype.get = function(path, headers, callback) {
   };
 
   if (cache) {
-    return cache.get(path+'-date', function(err, last_modified) {
+    return cache.get(path+'-date', function(err, date) {
       if (err) return callback(err);
-      if (last_modified) headers['If-Modified-Since'] = last_modified;
+      if (date) headers['If-Modified-Since'] = date;
       _get();
     });
   }

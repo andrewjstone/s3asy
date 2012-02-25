@@ -1,5 +1,6 @@
 var knox = require('knox'),
-    util = require('util');
+    util = require('util'),
+    async = require('async');
 
 var S3 = module.exports = function(config) {
   if (config.cache) {
@@ -28,7 +29,7 @@ S3.prototype.get = function(path, headers, callback) {
         return callback(new Error('ERROR: status code = '+res.statusCode));
       }
 
-      var complete = true;
+      var complete = false;
       var body = '';
       res.setEncoding('utf8');
       res.on('data', function(chunk) {

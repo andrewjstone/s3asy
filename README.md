@@ -4,6 +4,8 @@ s3asy ('S-Three-Zee') is a simple library for issuing GET, PUT, and DELETE reque
 
 It achieves this simplicity by utilizing [knox](https://github.com/LearnBoost/knox) and [cacheit](https://github.com/andrewjstone/cacheit) under the hood.
 
+#### Warning: Don't use this for large objects, as it obviously buffers them in memory. Also Redis cannot cash strings larger than 512 MB.
+
 # Example
 
 ```javascript

@@ -27,7 +27,15 @@ s3.get('/some/path', {'x-amz-acl': 'private'}, function(err, body) {
 
 ## s3.get(path, [headers], callback) 
 
-## s3.put(path, [headers], data, callback)
+## s3.put(path, headers, data, callback)
+Requires ```Content-Type``` and ```Content-Length``` headers
 
 ## s3.delete(path, [headers], callback)
 
+## s3.copy(dst_path, src_path, src_bucket, headers, callback)
+
+ * dst_path - the destination filename
+ * src_path - the source filename
+ * src_bucket - the source bucket. The dst_bucket is the bucket passed to the constructor.
+
+Requires ```Content-Type``` and ```Content-Length``` headers

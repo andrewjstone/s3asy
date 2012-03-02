@@ -96,3 +96,18 @@ S3.prototype.delete = function(path, headers, callback) {
     callback();
   }).end();
 };
+
+S3.prototype.copy = function(dst_path, src_path, src_bucket, headers, callback) {
+  if (typeof headers === 'function') {
+    callback = headers;
+    headers = {};
+  }
+  var src_header = '/'+src_bucket; 
+  if (src_path.indexOf('/') === 0) {
+    src_header += src_path;
+  } else {
+    src_header += '/' + src_path;
+  }
+  headers['x-amz-copy-source'] = src_header;
+  this.put(dst_path, headers, '', callback);
+};

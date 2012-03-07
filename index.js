@@ -1,6 +1,7 @@
 var knox = require('knox'),
     util = require('util'),
-    async = require('async');
+    async = require('async'),
+    sax = require('sax');
 
 var S3 = module.exports = function(config) {
   if (config.cache) {
@@ -110,4 +111,27 @@ S3.prototype.copy = function(dst_path, src_path, src_bucket, headers, callback) 
   }
   headers['x-amz-copy-source'] = src_header;
   this.put(dst_path, headers, '', callback);
+};
+
+S3.prototype.ls = function(path, callback) {
+  this.get('/?prefix='+path, function(err, xml) {
+    if (err) return callback(err);    
+    var name;
+    var paths = [];
+    var parser = sax.parser(true);
+
+    parser.onopentag = function(node) {
+      name = node.name;
+    };
+
+    parser.ontext = function(text) {
+      if (name == 'Key') paths.push(text);
+    };
+    
+    parser.onend = function() {
+      callback(null, paths);
+    };
+    
+    parser.write(xml).close();
+  });
 };

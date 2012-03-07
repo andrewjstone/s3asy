@@ -39,3 +39,7 @@ Requires ```Content-Type``` and ```Content-Length``` headers
  * src_bucket - the source bucket. The dst_bucket is the bucket passed to the constructor.
 
 Requires ```Content-Type``` and ```Content-Length``` headers
+
+## s3.ls(path, callback)
+
+List files with a given prefix (path). Do NOT use a leading slash.

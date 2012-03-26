@@ -2,7 +2,7 @@
   "author": "Andrew J. Stone <andrew.j.stone.1@gmail.com>",
   "name": "s3asy",
   "description": "Simple S3 integration with a cache backed by Redis",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/andrewjstone/s3asy.git"
@@ -17,5 +17,7 @@
     "async": "*",
     "sax": "*"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "mocha": "*"
+  }
 }

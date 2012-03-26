@@ -43,3 +43,22 @@ Requires ```Content-Type``` and ```Content-Length``` headers
 ## s3.ls(path, callback)
 
 List files with a given prefix (path). Do NOT use a leading slash.
+
+# Run Tests
+Ensure you have mocha installed.
+
+    npm install mocha
+
+Add a config file for s3asy to use in ```~/.s3asy_test_config.js```. 
+
+    module.exports = {
+      key: '<api-key-here>',
+      secret: '<secret-here>',
+      bucket: 'bucket-name',
+      cache: true
+    };
+
+Run tests
+
+    cd test
+    mocha test.js --reporter spec 

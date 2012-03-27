@@ -25,11 +25,25 @@ S3.prototype.get = function(path, headers, callback) {
     headers = {};
   }
 
-  var _get = function() {
+  var _get = function(path, headers) {
     self.client.get(path, headers).on('response', function(res) {
+
       if (res.statusCode === 304) {
-        return cache.get(path, callback);
+        return cache.get(path, function(err, data) {
+          if (err) return callback(err);
+          if (!data) {
+
+            // We need to bust the cache here. The data was cleared out of redis already,
+            // but S3 think's it wasn't modified.
+            cache.delete(path+'-date', function(err) {
+              if (err) return callback(err);
+              delete headers['If-Modified-Since'];
+              self.get(path, headers, callback);
+            });
+          }
+        });
       }
+
       if (res.statusCode != 200) {
         return callback(new Error('ERROR: status code = '+res.statusCode));
       }
@@ -65,7 +79,7 @@ S3.prototype.get = function(path, headers, callback) {
     return cache.get(path+'-date', function(err, date) {
       if (err) return callback(err);
       if (date) headers['If-Modified-Since'] = date;
-      _get();
+      _get(path, headers);
     });
   }
   _get();

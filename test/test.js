@@ -37,6 +37,14 @@ describe('s3asy', function() {
     });
   });
 
+  it('can retrieve the cached file', function(done) {
+    s3.get('/test/s3asy', function(err, data) {
+      assert.ok(!err);
+      assert.equal(data, original);
+      done();
+    });
+  });
+
   it('does not have the file cached after 2 seconds', function(done) {
     this.timeout(5000);
     setTimeout(function() {

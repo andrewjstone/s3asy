@@ -35,12 +35,15 @@ S3.prototype.get = function(path, headers, callback) {
 
             // We need to bust the cache here. The data was cleared out of redis already,
             // but S3 think's it wasn't modified.
-            cache.delete(path+'-date', function(err) {
+            return cache.delete(path+'-date', function(err) {
               if (err) return callback(err);
               delete headers['If-Modified-Since'];
               self.get(path, headers, callback);
             });
           }
+
+          // return the cached data
+          callback(null, data);
         });
       }
 

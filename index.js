@@ -84,7 +84,7 @@ S3.prototype.get = function(path, headers, callback) {
       _get(path, headers);
     });
   }
-  _get();
+  _get(path, headers);
 };
 
 S3.prototype.put = function(path, headers, data, callback) {

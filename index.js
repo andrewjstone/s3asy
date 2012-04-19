@@ -47,10 +47,6 @@ S3.prototype.get = function(path, headers, callback) {
         });
       }
 
-      if (res.statusCode != 200) {
-        return callback(new Error('ERROR: status code = '+res.statusCode));
-      }
-
       var complete = false;
       var body = '';
       res.setEncoding('utf8');
@@ -59,6 +55,9 @@ S3.prototype.get = function(path, headers, callback) {
       });
       res.on('end', function() {
         if (complete) return; // an error has occurred
+        if (res.statusCode != 200) {
+          return callback(new Error('ERROR: status code = '+res.statusCode+'. body = '+body));
+        }
         async.series([
           function(cb) {
             if (cache) return cache.set(path+'-date', res.headers['date'], cb);

@@ -107,7 +107,7 @@ S3.prototype.delete = function(path, headers, callback) {
     headers = {};
   }
   this.client.del(path, headers).on('response', function(res) {
-    if (res.statusCode != 200) {
+    if (res.statusCode != 200 && res.statusCode != 204) {
       return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
     }
     callback();

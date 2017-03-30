@@ -11,7 +11,11 @@ var S3 = module.exports = function(config) {
   var knox_conf = {
     key: config.key,
     secret: config.secret,
-    bucket: config.bucket
+    bucket: config.bucket,
+    endpoint: config.endpoint,
+    region: config.region,
+    style: config.style,
+    port: config.port
   };
   this.client = knox.createClient(knox_conf);
 };
@@ -88,6 +92,7 @@ S3.prototype.get = function(path, headers, callback) {
 };
 
 S3.prototype.put = function(path, headers, data, callback) {
+  var cache = this.cache;
   if (typeof headers === 'string') {
     callback = data;
     data = headers;
@@ -97,7 +102,17 @@ S3.prototype.put = function(path, headers, data, callback) {
     if (res.statusCode != 200) {
       return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
     }
-    callback();
+    async.series([
+        function(cb) {
+            if (cache) return cache.set(path+'-date', res.headers['date'], cb);
+            cb();
+        },
+        function(cb) {
+            if (cache) return cache.set(path, data, cb); 
+            cb();
+        }], function(err) {
+            callback(err, data);
+        });
   }).end(data);
 };
 
@@ -106,11 +121,22 @@ S3.prototype.delete = function(path, headers, callback) {
     callback = headers;
     headers = {};
   }
+  var cache = this.cache;
   this.client.del(path, headers).on('response', function(res) {
     if (res.statusCode != 200 && res.statusCode != 204) {
       return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
     }
-    callback();
+    async.series([
+        function(cb) {
+            if (cache) return cache.delete(path+'-date', cb);
+            cb();
+        },
+        function(cb) {
+            if (cache) return cache.delete(path, cb); 
+            cb();
+        }], function(err) {
+            callback(err);
+        });
   }).end();
 };
 

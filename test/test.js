@@ -1,5 +1,5 @@
 var S3 = require('../index');
-var config = require(process.env.HOME+'/.s3asy_test_config');
+var config = require('./.s3asy_test_config');
 var assert = require('assert');
 
 var s3 = new S3(config);

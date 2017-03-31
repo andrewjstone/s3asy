@@ -76,7 +76,7 @@ S3.prototype.put = function(path, headers, data, callback) {
     data = headers;
     headers = {};
   }
-  this.client.putBuffer(path, headers).on('response', function(res) {
+  this.client.put(path, headers).on('response', function(res) {
       if (res.statusCode != 200) {
           return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
       }

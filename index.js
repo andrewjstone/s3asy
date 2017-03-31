@@ -81,7 +81,7 @@ S3.prototype.put = function(path, headers, data, callback) {
           return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
       }
       if (cache) {
-          return cache.set(path, data, function(err) {
+          return cache.set(path, data.toString('binary'), function(err) {
               callback(err, res.body);
           });
       }

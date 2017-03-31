@@ -16,6 +16,8 @@ var S3 = module.exports = function(config) {
     region: config.region,
     style: config.style,
     secure: config.secure,
+    token: config.token,
+    agent: config.agent,
     port: config.port
   };
   this.client = knox.createClient(knox_conf);

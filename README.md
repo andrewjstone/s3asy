@@ -23,6 +23,9 @@ s3.get('/some/path', {'x-amz-acl': 'private'}, function(err, body) {
 
 ```
 
+# Object creation
+s3asy accepts all config options that knox accepts, and will use it verbatim.
+
 # API
 
 ## s3.get(path, [headers], callback) 
@@ -62,3 +65,35 @@ Run tests
 
     cd test
     mocha test.js --reporter spec 
+    
+# Using s3asy with s3rver or other s3-compatible services
+[s3rver](https://github.com/jamhall/s3rver) is a fake s3 server written in NodeJS. Please refer to the module's documentation on how to use s3rver.
+
+## Example config
+```javascript
+var S3rver = require('s3rver');
+var S3 = require('s3asy');
+
+var s3rver = new S3rver({
+    hostname: 'localhost',
+    port: 10001,
+    silent: true,
+    directory: '/tmp/s3rver/' // Remember to create bucket folders here as well
+}).run(function(err, host, port) {
+    console.log('s3rver is running on:', host, ':', port);
+});
+
+var s3 = new S3({
+  key: 'not applicable',
+  secret: 'not applicable',
+  bucket: 'bucket-name',
+  endpoint: 'localhost',
+  port: 10001,
+  style: 'path',
+  cache: true
+});
+
+s3.get('/some/path', {'x-amz-acl': 'private'}, function(err, body) {
+  console.log(body);
+});
+```

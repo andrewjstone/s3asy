@@ -36,7 +36,7 @@ S3.prototype.get = function(path, headers, callback) {
     self.client.get(path, headers).on('response', function(res) {
       var complete = false;
       var body = '';
-      res.setEncoding('utf8');
+      res.setEncoding('binary');
       res.on('data', function(chunk) {
         body += chunk;
       });

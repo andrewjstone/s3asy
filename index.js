@@ -85,10 +85,14 @@ S3.prototype.get = function(path, headers, callback) {
   };
 
   if (cache) {
-    return cache.get(path+'-date', function(err, date) {
+    return cache.get(path, function(err, data) {
       if (err) return callback(err);
-      if (date) headers['If-Modified-Since'] = date;
-      _get(path, headers);
+      if (data) return callback(null, data);
+      cache.get(path + 'date', function(err, date) {
+          if (err) return callback(err);
+          if(date) headers['If-Modified-Since'] = date;
+          _get(path, headers);
+        });
     });
   }
   _get(path, headers);

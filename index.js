@@ -34,26 +34,6 @@ S3.prototype.get = function(path, headers, callback) {
 
   var _get = function(path, headers) {
     self.client.get(path, headers).on('response', function(res) {
-
-      if (res.statusCode === 304) {
-        return cache.get(path, function(err, data) {
-          if (err) return callback(err);
-          if (!data) {
-
-            // We need to bust the cache here. The data was cleared out of redis already,
-            // but S3 think's it wasn't modified.
-            return cache.delete(path+'-date', function(err) {
-              if (err) return callback(err);
-              delete headers['If-Modified-Since'];
-              self.get(path, headers, callback);
-            });
-          }
-
-          // return the cached data
-          callback(null, data);
-        });
-      }
-
       var complete = false;
       var body = '';
       res.setEncoding('utf8');
@@ -65,18 +45,13 @@ S3.prototype.get = function(path, headers, callback) {
         if (res.statusCode != 200) {
           return callback(new Error('ERROR: status code = '+res.statusCode+'. body = '+body));
         }
-        async.series([
-          function(cb) {
-            if (cache) return cache.set(path+'-date', res.headers['date'], cb);
-            cb();
-          },
-          function(cb) {
-            if (cache) return cache.set(path, body, cb); 
-            cb();
-          }], function(err) {
-            callback(err, body);
-          });
-        });
+        if (cache) {
+            return cache.set(path, body, function(err) {
+                callback(err, body);
+            }); 
+        }
+        callback(err, body);
+      });
       res.on('error', function(err) {
         complete = true;
         callback('error', path, headers, err);
@@ -88,11 +63,7 @@ S3.prototype.get = function(path, headers, callback) {
     return cache.get(path, function(err, data) {
       if (err) return callback(err);
       if (data) return callback(null, data);
-      cache.get(path + 'date', function(err, date) {
-          if (err) return callback(err);
-          if(date) headers['If-Modified-Since'] = date;
-          _get(path, headers);
-        });
+      _get(path, headers);
     });
   }
   _get(path, headers);
@@ -106,20 +77,15 @@ S3.prototype.put = function(path, headers, data, callback) {
     headers = {};
   }
   this.client.put(path, headers).on('response', function(res) {
-    if (res.statusCode != 200) {
-      return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
-    }
-    async.series([
-        function(cb) {
-            if (cache) return cache.set(path+'-date', res.headers['date'], cb);
-            cb();
-        },
-        function(cb) {
-            if (cache) return cache.set(path, data, cb); 
-            cb();
-        }], function(err) {
-            callback(err, data);
-        });
+      if (res.statusCode != 200) {
+          return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
+      }
+      if (cache) {
+          return cache.set(path, data, function(err) {
+              callback(err, res.body);
+          });
+      }
+      callback(null, res.body);
   }).end(data);
 };
 
@@ -133,17 +99,12 @@ S3.prototype.delete = function(path, headers, callback) {
     if (res.statusCode != 200 && res.statusCode != 204) {
       return callback(new Error('ERROR: status code = '+res.statusCode), res.body);
     }
-    async.series([
-        function(cb) {
-            if (cache) return cache.delete(path+'-date', cb);
-            cb();
-        },
-        function(cb) {
-            if (cache) return cache.delete(path, cb); 
-            cb();
-        }], function(err) {
-            callback(err);
-        });
+    if (cache) {
+        return cache.delete(path, function(err) {
+            callback(err, res.body);
+        }); 
+    }
+    callback(null, res.body);
   }).end();
 };
 

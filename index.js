@@ -13,7 +13,8 @@ var S3 = module.exports = function(config) {
 			this.cache.default_ttl = 60*60; // 1 Hour
 		}
 	};
-	this.preferCache = config.preferCache;
+	this.preferCache = !!config.preferCache;
+	this.cacheOnPut = !!config.cacheOnPut;
 	var knox_conf = {
 		key: config.key,
 		secret: config.secret,
@@ -110,6 +111,7 @@ S3.prototype.get = function(path, headers, callback) {
 
 S3.prototype.put = function(path, headers, data, callback) {
 	var cache = this.cache;
+	var cacheOnPut = this.cacheOnPut;
 	if (typeof headers === 'string') {
 		callback = data;
 		data = headers;
@@ -121,11 +123,11 @@ S3.prototype.put = function(path, headers, data, callback) {
 		}
 		async.series([
 			function(cb) {
-				if (cache) return cache.set(path+'-date', res.headers['date'], cb);
+				if (cache && cacheOnPut) return cache.set(path+'-date', res.headers['date'], cb);
 				cb();
 			},
 			function(cb) {
-				if (cache) return cache.set(path, data.toString('binary'), cb); 
+				if (cache && cacheOnPut) return cache.set(path, data.toString('binary'), cb); 
 				cb();
 			}], function(err) {
 				callback(err, res.body);

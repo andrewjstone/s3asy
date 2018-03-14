@@ -18,6 +18,9 @@
     "sax": "^1.2.4"
   },
   "devDependencies": {
-    "mocha": "*"
+    "mkdirp": "^0.5.1",
+    "mocha": "*",
+    "s3rver": "^2.2.1",
+    "tmp": "0.0.33"
   }
 }

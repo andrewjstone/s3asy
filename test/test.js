@@ -169,7 +169,7 @@ describe('s3asy', function() {
     });
   });
 
-	// Here follow new tests for the preferCache options
+  // Here follow new tests for the preferCache options
   it('can prefer cache/stale data', function(done) {
     // Reset the default ttl to 10 sec
     s3.cache.default_ttl = 10;
@@ -190,6 +190,25 @@ describe('s3asy', function() {
 			});
     });
   });
+
+  // Here follow range request tests:
+	it.only('can retrieve a range defined by headers', function(done) {
+    s3.put('/test/s3asy', {
+      'Content-Type': 'text/plain',
+      'Content-Length': original.length
+    }, original, function(err) {
+      assert.ok(!err);
+      s3.get('/test/s3asy', {Range: "bytes=0-3"}, function(err, data) {
+        assert.ok(!err);
+        assert.equal(data, original.slice(0,4)); // Range is inclusive, buffer range is not
+				s3.cache.get('/test/s3asy', function(err, data) { // Cache is whole thing
+					assert.ok(!err);
+					assert.equal(data, original);
+					done();
+				});
+      });
+    });
+	});
 
 });
 

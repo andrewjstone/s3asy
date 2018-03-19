@@ -1,7 +1,8 @@
 var knox = require('knox'),
 	util = require('util'),
 	async = require('async'),
-	sax = require('sax');
+	sax = require('sax'),
+	parseRange = require('range-parser');
 
 var S3 = module.exports = function(config) {
 	if (config.cache) {
@@ -40,6 +41,11 @@ S3.prototype.get = function(path, headers, callback) {
 	}
 
 	var _get = function(path, headers) {
+		var rangeRequest = headers['Range'];
+		var range;
+		if(rangeRequest)
+			range = parseRange(Number.MAX_SAFE_INTEGER, headers['Range'], {combine: true});
+		delete headers['Range'];
 		self.client.get(path, headers).on('response', function(res) {
 			if (res.statusCode === 304) {
 				return cache.get(path, function(err, data) {
@@ -51,12 +57,17 @@ S3.prototype.get = function(path, headers, callback) {
 						return cache.delete(path+'-date', function(err) {
 							if (err) return callback(err);
 							delete headers['If-Modified-Since'];
+							headers['Range'] = rangeRequest;
 							self.get(path, headers, callback);
 						});
 					}
 
 					// return the cached data
-					callback(null, data);
+					if(rangeRequest && range.type == 'bytes') {
+						callback(null, data.slice(range[0].start, range[0].end+1));
+					} else {
+						callback(null, data);
+					}
 				});
 			}
 
@@ -80,7 +91,11 @@ S3.prototype.get = function(path, headers, callback) {
 						if (cache) return cache.set(path, body, cb); 
 						cb();
 					}], function(err) {
-						callback(err, body);
+						if(rangeRequest && range.type == 'bytes' && body) {
+							callback(err, body.slice(range[0].start, range[0].end+1));
+						} else {
+							callback(err, body);
+						}
 					});
 			});
 			res.on('error', function(err) {
@@ -93,9 +108,23 @@ S3.prototype.get = function(path, headers, callback) {
 	if (cache) {
 		// Only prefer cache if user didn't supply If-Modified-Since
 		if (this.preferCache && !headers['If-Modified-Since']) {
+
+			var rangeRequest = headers['Range'];
+			var range;
+			if(rangeRequest)
+				range = parseRange(Number.MAX_SAFE_INTEGER, headers['Range'], {combine: true});
+			delete headers['Range'];
 			return cache.get(path, function(err, data) {
 				if (err) return callback(err);
-				if (data) return callback(null, data);
+				if (data) {
+
+					// return the cached data
+					if(rangeRequest && range.type == 'bytes') {
+						return callback(null, data.slice(range[0].start, range[0].end+1));
+					} else {
+						return callback(null, data);
+					}
+				}
 				_get(path, headers);
 			});
 		} else {
@@ -112,6 +141,8 @@ S3.prototype.get = function(path, headers, callback) {
 S3.prototype.put = function(path, headers, data, callback) {
 	var cache = this.cache;
 	var cacheOnPut = this.cacheOnPut;
+	var rangeRequest = headers ? headers['Range'] : undefined;
+
 	if (typeof headers === 'string') {
 		callback = data;
 		data = headers;
@@ -127,7 +158,7 @@ S3.prototype.put = function(path, headers, data, callback) {
 				cb();
 			},
 			function(cb) {
-				if (cache && cacheOnPut) return cache.set(path, data.toString('binary'), cb); 
+				if (cache && cacheOnPut && !rangeRequest) return cache.set(path, data.toString('binary'), cb); 
 				cb();
 			}], function(err) {
 				callback(err, res.body);

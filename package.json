@@ -19,6 +19,7 @@
     "sax": "^1.2.4"
   },
   "devDependencies": {
+    "buffer-equal": "^1.0.0",
     "mkdirp": "^0.5.1",
     "mocha": "*",
     "s3rver": "^2.2.1",

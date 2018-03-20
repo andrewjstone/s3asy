@@ -64,9 +64,9 @@ S3.prototype.get = function(path, headers, callback) {
 
 					// return the cached data
 					if(rangeRequest && range.type == 'bytes') {
-						callback(null, data.slice(range[0].start, range[0].end+1));
+						callback(null, data.slice(range[0].start, range[0].end+1).toString('binary'));
 					} else {
-						callback(null, data);
+						callback(null, data.toString('binary'));
 					}
 				});
 			}
@@ -92,9 +92,9 @@ S3.prototype.get = function(path, headers, callback) {
 						cb();
 					}], function(err) {
 						if(rangeRequest && range.type == 'bytes' && body) {
-							callback(err, body.slice(range[0].start, range[0].end+1));
+							callback(err, body.slice(range[0].start, range[0].end+1).toString('binary'));
 						} else {
-							callback(err, body);
+							callback(err, body.toString('binary'));
 						}
 					});
 			});
@@ -113,16 +113,14 @@ S3.prototype.get = function(path, headers, callback) {
 			var range;
 			if(rangeRequest)
 				range = parseRange(Number.MAX_SAFE_INTEGER, headers['Range'], {combine: true});
-			delete headers['Range'];
 			return cache.get(path, function(err, data) {
 				if (err) return callback(err);
 				if (data) {
-
 					// return the cached data
 					if(rangeRequest && range.type == 'bytes') {
-						return callback(null, data.slice(range[0].start, range[0].end+1));
+						return callback(null, data.slice(range[0].start, range[0].end+1).toString('binary'));
 					} else {
-						return callback(null, data);
+						return callback(null, data.toString('binary'));
 					}
 				}
 				_get(path, headers);

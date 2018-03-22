@@ -51,7 +51,6 @@ S3.prototype.get = function(path, headers, callback) {
 				return cache.get(path, function(err, data) {
 					if (err) return callback(err);
 					if (!data) {
-
 						// We need to bust the cache here. The data was cleared out of redis already,
 						// but S3 think's it wasn't modified.
 						return cache.delete(path+'-date', function(err) {
@@ -61,12 +60,11 @@ S3.prototype.get = function(path, headers, callback) {
 							self.get(path, headers, callback);
 						});
 					}
-
 					// return the cached data
 					if(rangeRequest && range.type == 'bytes') {
-						callback(null, data.slice(range[0].start, range[0].end+1).toString('binary'));
+						callback(null, data.slice(range[0].start, range[0].end+1));
 					} else {
-						callback(null, data.toString('binary'));
+						callback(null, data);
 					}
 				});
 			}
@@ -88,13 +86,13 @@ S3.prototype.get = function(path, headers, callback) {
 						cb();
 					},
 					function(cb) {
-						if (cache) return cache.set(path, body, cb); 
+						if (cache) return cache.set(path, Buffer.from(body, 'binary'), cb); 
 						cb();
 					}], function(err) {
 						if(rangeRequest && range.type == 'bytes' && body) {
-							callback(err, body.slice(range[0].start, range[0].end+1).toString('binary'));
+							callback(err, Buffer.from(body, 'binary').slice(range[0].start, range[0].end+1));
 						} else {
-							callback(err, body.toString('binary'));
+							callback(err, Buffer.from(body, 'binary'));
 						}
 					});
 			});
@@ -118,9 +116,9 @@ S3.prototype.get = function(path, headers, callback) {
 				if (data) {
 					// return the cached data
 					if(rangeRequest && range.type == 'bytes') {
-						return callback(null, data.slice(range[0].start, range[0].end+1).toString('binary'));
+						return callback(null, data.slice(range[0].start, range[0].end+1));
 					} else {
-						return callback(null, data.toString('binary'));
+						return callback(null, data);
 					}
 				}
 				_get(path, headers);
@@ -132,14 +130,14 @@ S3.prototype.get = function(path, headers, callback) {
 				_get(path, headers);
 			});
 		}
+	} else {
+		_get(path, headers);
 	}
-	_get(path, headers);
 };
 
 S3.prototype.put = function(path, headers, data, callback) {
 	var cache = this.cache;
 	var cacheOnPut = this.cacheOnPut;
-	var rangeRequest = headers ? headers['Range'] : undefined;
 
 	if (typeof headers === 'string') {
 		callback = data;
@@ -156,7 +154,7 @@ S3.prototype.put = function(path, headers, data, callback) {
 				cb();
 			},
 			function(cb) {
-				if (cache && cacheOnPut && !rangeRequest) return cache.set(path, data.toString('binary'), cb); 
+				if (cache && cacheOnPut) return cache.set(path, data, cb); 
 				cb();
 			}], function(err) {
 				callback(err, res.body);

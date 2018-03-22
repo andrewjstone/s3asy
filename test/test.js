@@ -70,7 +70,7 @@ describe('s3asy', function() {
 			assert.ok(!err);
 			s3.cache.get('/test/s3asy', function(err, data) {
 				assert.ok(!err);
-				assert.deepEqual(data, undefined);
+				assert.equal(data, undefined);
 				done();
 			});
 		});
@@ -95,7 +95,7 @@ describe('s3asy', function() {
 	it('can retrieve the same file', function(done) {
 		s3.get('/test/s3asy', function(err, data) {
 			assert.ok(!err);
-			assert.equal(data, original);
+			assert.equal(data.toString('utf8'), original);
 			done();
 		});
 	});
@@ -104,7 +104,7 @@ describe('s3asy', function() {
 	it('has the file cached', function(done) {
 		s3.cache.get('/test/s3asy', function(err, data) {
 			assert.ok(!err);
-			assert.equal(data, original);
+			assert.equal(data.toString('utf8'), original);
 			done();
 		});
 	});
@@ -140,7 +140,7 @@ describe('s3asy', function() {
 			assert.ok(!err);
 			s3.get('/test/s3asy', function(err, data) {
 				assert.ok(!err);
-				assert.equal(data, original);
+				assert.equal(data.toString('utf8'), original);
 				done();
 			});
 		});
@@ -164,7 +164,7 @@ describe('s3asy', function() {
 					// undefined from the cache
 					s3.get('/test/s3asy', function(err, data) {
 						assert.ok(!err);
-						assert.deepEqual(data, original);
+						assert.equal(data.toString('utf8'), original);
 						done();
 					});
 				});
@@ -196,21 +196,29 @@ describe('s3asy', function() {
 
 	// Here follow range request tests:
 	it('can retrieve a range defined by headers', function(done) {
-		s3.cache.delete('/test/s3asy', function(err) {
+		s3.cacheOnPut = false;
+		s3.preferCache = false;
+		s3.cache.default_ttl = 10;
+		s3.cache.delete('/test/s3asy-date', function(err) {
 			assert.ok(!err);
-			s3.put('/test/s3asy', {
-				'Content-Type': 'text/plain',
-				'Content-Length': original.length
-			}, original, function(err) {
+			s3.cache.delete('/test/s3asy', function(err) {
 				assert.ok(!err);
-				s3.get('/test/s3asy', {Range: "bytes=1-3"}, function(err, data) {
+				s3.put('/test/s3asy', {
+					'Content-Type': 'text/plain',
+					'Content-Length': originalBinary.byteLength
+				}, originalBinary, function(err) {
 					assert.ok(!err);
-					assert.equal(data.length, 3);
-					assert.equal(data, original.slice(1,4)); // Range is inclusive, buffer range is not
-					s3.cache.get('/test/s3asy', function(err, data) { // Cache is whole thing
+					s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=0-255"}, function(err, data) {
+						data = Buffer.from(data, 'binary');
 						assert.ok(!err);
-						assert.equal(data, original);
-						done();
+						assert.equal(data.length, 256);
+						assert.equal(bufferEqual(data, originalBinary.slice(0,256)), true); // Range is inclusive, buffer range is not
+						s3.cache.get(Buffer.from('/test/s3asy'), function(err, data) { // Cache is whole thing
+							data = Buffer.from(data, 'binary');
+							assert.ok(!err);
+							assert.equal(bufferEqual(data, originalBinary), true);
+							done();
+						});
 					});
 				});
 			});
@@ -219,53 +227,63 @@ describe('s3asy', function() {
 
 	it('can retrieve a range defined by headers, and cache on put', function(done) {
 		s3.cacheOnPut = true;
-		s3.put('/test/s3asy', {
-			'Content-Type': 'text/plain',
-			'Content-Length': originalBinary.length
-		}, originalBinary, function(err) {
+		s3.cache.default_ttl = 10;
+		s3.cache.delete('/test/s3asy-date', function(err) {
 			assert.ok(!err);
-			s3.get('/test/s3asy', {Range: "bytes=0-255"}, function(err, data) {
+			s3.cache.delete('/test/s3asy', function(err) {
 				assert.ok(!err);
-				assert.equal(data, originalBinary.slice(0,256).toString('binary')); // Range is inclusive, buffer range is not
-				s3.cache.get('/test/s3asy', function(err, data) { // Cache is whole thing
+				s3.put('/test/s3asy', {
+					'Content-Type': 'text/plain',
+					'Content-Length': originalBinary.byteLength
+				}, originalBinary, function(err) {
 					assert.ok(!err);
-					assert.equal(data, originalBinary.toString('binary'));
-					done();
+					s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=0-255"}, function(err, data) {
+						data = Buffer.from(data, 'binary');
+						assert.ok(!err);
+						assert.equal(bufferEqual(data, originalBinary.slice(0,256)), true); // Range is inclusive, buffer range is not
+						s3.cache.get(Buffer.from('/test/s3asy'), function(err, data) { // Cache is whole thing
+							data = Buffer.from(data, 'binary');
+							assert.ok(!err);
+							assert.equal(bufferEqual(data, originalBinary), true);
+							done();
+						});
+					});
 				});
 			});
 		});
 	});
 
 	it('can retrieve a range defined by headers, and cache on put and prefer cache', function(done) {
+		s3.cache.default_ttl = 10;
 		s3.cacheOnPut = true;
 		s3.preferCache = true;
 		s3.put('/test/s3asy', {
 			'Content-Type': 'text/plain',
-			'Content-Length': originalBinary.length
+			'Content-Length': originalBinary.byteLength
 		}, originalBinary, function(err) {
 			assert.ok(!err);
-			s3.cache.get('/test/s3asy', function(err, data) { // Cache is whole thing
-				data = new Buffer(data, 'binary');
-				//data = new Buffer(data, 'utf-8');
+			s3.cache.get(Buffer.from('/test/s3asy'), function(err, data) { // Cache is whole thing
+				data = Buffer.from(data, 'binary');
+				//data = Buffer.from(data, 'utf8');
 				assert.ok(!err);
 				assert.equal(bufferEqual(data, originalBinary), true);
-				s3.get('/test/s3asy', {Range: "bytes=0-255"}, function(err, data) {
-					data = new Buffer(data, 'binary');
+				s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=0-255"}, function(err, data) {
+					data = Buffer.from(data, 'binary');
 					assert.ok(!err);
 					assert.equal(data.byteLength, 256);
 					assert.equal(bufferEqual(data, originalBinary.slice(0,256)), true); // Range is inclusive, buffer range is not
-					s3.get('/test/s3asy', {Range: "bytes=256-511"}, function(err, data) {
-						data = new Buffer(data, 'binary');
+					s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=256-511"}, function(err, data) {
+						data = Buffer.from(data, 'binary');
 						assert.ok(!err);
 						assert.equal(data.byteLength, 256);
 						assert.equal(bufferEqual(data, originalBinary.slice(256,512)), true); // Range is inclusive, buffer range is not
-						s3.get('/test/s3asy', {Range: "bytes=512-767"}, function(err, data) {
-							data = new Buffer(data, 'binary');
+						s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=512-767"}, function(err, data) {
+							data = Buffer.from(data, 'binary');
 							assert.ok(!err);
 							assert.equal(data.byteLength, 256);
 							assert.equal(bufferEqual(data, originalBinary.slice(512,768)), true); // Range is inclusive, buffer range is not
-							s3.get('/test/s3asy', {Range: "bytes=768-1023"}, function(err, data) {
-								data = new Buffer(data, 'binary');
+							s3.get(Buffer.from('/test/s3asy'), {Range: "bytes=768-1023"}, function(err, data) {
+								data = Buffer.from(data, 'binary');
 								assert.ok(!err);
 								assert.equal(data.byteLength, 256);
 								assert.equal(bufferEqual(data, originalBinary.slice(768,1024)), true); // Range is inclusive, buffer range is not

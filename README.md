@@ -27,9 +27,9 @@ s3.get('/some/path', {'x-amz-acl': 'private'}, function(err, body) {
 s3asy accepts all config options that knox accepts, and will use it verbatim.
 
 Additional options are:
-	* preferCache - This will never request to S3, unless it is not in the cache or `If-Modified-Since` is provided. This may return **stale** data.
-	* cacheOnPut - This caches data on PUT requests.
-	* cacheTTL - This sets the internal cache (Redis) default TTL value for set requsts.
+* preferCache - This will never request to S3, unless it is not in the cache or `If-Modified-Since` is provided. This may return **stale** data.
+* cacheOnPut - This caches data on PUT requests.
+* cacheTTL - This sets the internal cache (Redis) default TTL value for set requsts.
 
 # API
 
